@@ -11,6 +11,7 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  deleteUser
 } from "../controllers/user.js";
 
 //create an express router
@@ -21,6 +22,7 @@ router.get("/all", getAllUsers);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/register", registerUser);
+router.delete("/delete/:id", deleteUser);
 
 export default router;
 // we will import this router in app.js as userRouter

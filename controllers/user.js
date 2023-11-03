@@ -2,6 +2,7 @@
 
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 //Register new user
 const registerUser = async (req, res) => {
@@ -47,7 +48,15 @@ const loginUser = async (req, res) => {
       res.status(404).send("Invalid Email or password");
     }
 
-    res.status(200).send(user);
+    const token = jwt.sign({ id: user._id, isSeller: user.isSeller }, process.env.JWT_SECRET_KEY);
+
+    res.status(200).cookie("accessToken", token, {
+      httpOnly: true,
+    })
+    .json({
+      success: true,
+      message: `Welcome aboard, ${user.username}`
+    });
 
   } catch (error) {
     console.log(error);
@@ -55,9 +64,27 @@ const loginUser = async (req, res) => {
   }
 };
 
-//Get All Users
+//Logout user
 const logoutUser = async (req, res) => {
   res.send("This will logout users");
 };
 
-export { getAllUsers, loginUser, logoutUser, registerUser };
+//Delete a user
+const deleteUser = async (req, res) => {
+  const {accessToken} = req.cookies;
+  if(!accessToken){
+    return res.status(401).json({
+      success: false,
+      message: "Login first"
+    });
+  }
+
+  const decoded = jwt.verify(accessToken, process.env.JWT_SECRET_KEY, (err, payload) => {
+    res.send(payload);
+  });
+
+
+
+};
+
+export { getAllUsers, loginUser, logoutUser, registerUser, deleteUser };
