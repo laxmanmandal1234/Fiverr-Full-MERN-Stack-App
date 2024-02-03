@@ -3,28 +3,30 @@
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { sendCookie } from "../utils/features.js";
+import { ErrorHandler } from "../middleware/error.js";
 
 //Register new user
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     let newUser = await User.findOne({ email });
 
     if (newUser) {
-        res.status(400).send("User already registered");
+      return next(new ErrorHandler("User already registered", 400));
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);   //10 is salting level
 
     newUser = await User.create({
       ...req.body,
       password: hashedPassword,
     });
   
-    res.status(201).send("User created successfully. ✅");
-  } catch (error) {
-    console.log(error)
-    res.send(500).send("Something went wrong!😒")
+    sendCookie(newUser, res, 201, "User created successfully");
+
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -39,25 +41,16 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({email}).select("+password");   //initially when creating user model, password field is set to select:false, so it wont be accessed by default with User.find()   
     if(!user){
-      res.status(404).send("Invalid Email or password");
+      return next(new ErrorHandler("Invalid Email or password", 404));
     }
          
     //compare password
     const isMatched = await bcrypt.compare(req.body.password, user.password);
     if(!isMatched){
-      res.status(404).send("Invalid Email or password");
+      return next(new ErrorHandler("Invalid Email or password", 404));
     }
 
-    const token = jwt.sign({ id: user._id, isSeller: user.isSeller }, process.env.JWT_SECRET_KEY);
-
-    res.status(200).cookie("accessToken", token, {
-      httpOnly: true,
-    })
-    .json({
-      success: true,
-      message: `Welcome aboard, ${user.username}`
-    });
-
+    sendCookie(user, res, 200, `Welcome aboard, ${user.username}`);
   } catch (error) {
     console.log(error);
     res.send(error);
@@ -70,21 +63,22 @@ const logoutUser = async (req, res) => {
 };
 
 //Delete a user
-const deleteUser = async (req, res) => {
-  const {accessToken} = req.cookies;
-  if(!accessToken){
-    return res.status(401).json({
-      success: false,
-      message: "Login first"
-    });
+const deleteUser = async (req, res, next) => {
+  const userToDelete = await User.findById(req.params.id);  //find user you want to delete with requested ID
+  if(!userToDelete){
+    return next(new ErrorHandler(`User does not exist with give id: ${req.params.id}`, 404));
+}
+  //check if user logged in is same as the user id you want to delete
+  if(req.userId !== userToDelete._id.toString()) {
+    return next(new ErrorHandler("You are not authorised to delete someone else account", 403));
   }
+    
+  await User.findByIdAndDelete(req.params.id);
 
-  const decoded = jwt.verify(accessToken, process.env.JWT_SECRET_KEY, (err, payload) => {
-    res.send(payload);
+  res.clearCookie('accessToken').status(200).json({
+    success: true,
+    message: `👋👋 Bye Bye ${userToDelete.username}. Your Account is deleted successfully. Token cleared.`,
   });
-
-
-
 };
 
 export { getAllUsers, loginUser, logoutUser, registerUser, deleteUser };
