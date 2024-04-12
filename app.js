@@ -12,8 +12,10 @@
 import express from "express";
 import dotenv from "dotenv";
 import userRouter from "./routes/user.js";
+import gigRouter from "./routes/gig.js";
 import cookieParser from "cookie-parser";
 import { errorMiddleware } from "./middleware/error.js";
+import cors from "cors";
 
 export const app = express();
 
@@ -22,11 +24,16 @@ dotenv.config({
 });
 
 //using middlewares
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true
+}));    //it means the backend will allow http requests made fom frontend domain which is http://localhost:3000
 app.use(express.json())   //this will allow to send json data from client side. It recognizes incoming requests with a JSON format and parses the data into a JavaScript object, making it accessible in your Express application.
 app.use(cookieParser())
 
 //this will add prefix to the endpoints of apis defined in the routes
 app.use("/api/v1/users", userRouter); // it means in all the user routes this prefix is added
+app.use("/api/v1/gigs", gigRouter); // it means in all the gig routes this prefix is added
 
 //using error middleware
 app.use(errorMiddleware);

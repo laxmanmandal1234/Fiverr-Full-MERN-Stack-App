@@ -1,10 +1,10 @@
-//to identify a callback as a errorHandler, the first argument must be error
-// en error handler function is executed whenever next() of a callback function (here controller) is called by
+//To identify a callback as a errorHandler, the first argument must be error
+// An error handler function is executed whenever next() of a callback function (here controller) is called by
 // passing an error 
 
 
 class ErrorHandler extends Error {
-    constructor(message, statusCode) {
+    constructor(statusCode, message) {
         super(message);
         this.statusCode = statusCode;
     }

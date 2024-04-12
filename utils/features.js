@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 
 export const sendCookie = async (user, res, statusCode, message) => {
-    const token = jwt.sign({ id: user._id, isSeller: user.isSeller }, process.env.JWT_SECRET_KEY);
+    //here all the user info is inside _doc property of user object
+    const token = jwt.sign({ id: user._doc._id, isSeller: user._doc.isSeller }, process.env.JWT_SECRET_KEY);
     
     //{ httpOnly: true } option ensures that the cookie is only accessible through HTTP and not through client-side JavaScript, which is a security measure.
     res.status(statusCode).cookie("accessToken", token, {
@@ -10,6 +11,8 @@ export const sendCookie = async (user, res, statusCode, message) => {
     .json({
         success: true,
         message: message,
+        user
     });
 
+    console.log("Cookie sent:", token); // Log the cookie value
 }

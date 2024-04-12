@@ -6,7 +6,7 @@
 // import all inside app.js to connect these routers with the app
 
 import express from "express";
-import { getAllUsers, loginUser, logoutUser, registerUser, deleteUser } from "../controllers/user.js";
+import { getAllUsers, getUser, loginUser, logoutUser, registerUser, deleteUser } from "../controllers/user.js";
 import { verifyToken } from "../middleware/auth.js";
 
 //create an express router
@@ -14,6 +14,7 @@ const router = express.Router();
 
 //define all api routes related to user
 router.get("/all", getAllUsers);
+router.get("/single/:id", getUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/register", registerUser);
